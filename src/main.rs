@@ -15,7 +15,7 @@ struct Args {
     #[arg(short, long, default_value="/tmp/__window_switcher_tmp.C9F1634F.txt", help = "tmp file path")]
     tmp_file_path: String,
     
-    #[arg(long, default_value="3000", help = "timeout ms")]
+    #[arg(long, default_value="1000", help = "timeout ms")]
     timeout_ms: u32,
     
     #[arg(long,default_value="next",help = "next or prev")]
