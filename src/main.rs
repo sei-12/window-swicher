@@ -1,6 +1,8 @@
+use std::u32;
+
 use chrono::Utc;
 use clap::Parser;
-use yabai::get_window_ids;
+use yabai::{get_current_workspace_id, get_window_ids};
 
 mod yabai;
 mod tmp_file;
@@ -25,8 +27,8 @@ fn check_timeout(timeout_ms: u32, prev: i64, now: i64) -> bool {
     diff > timeout_ms.into()
 }
 
-fn calc_next_index(timeout: bool, window_ids_length: usize, prev_focus_index: Option<usize>, go_next: bool) -> Option<usize> {
-    let mut i = if timeout {
+fn calc_next_index(should_reset: bool, window_ids_length: usize, prev_focus_index: Option<usize>, go_next: bool) -> Option<usize> {
+    let mut i = if should_reset {
         0
     }else{
         match prev_focus_index { 
@@ -58,7 +60,6 @@ fn calc_next_index(timeout: bool, window_ids_length: usize, prev_focus_index: Op
     Some(i)
 }
 
-
 fn main() {
     let call_timestamp_ms = Utc::now().timestamp_millis();
 
@@ -68,6 +69,10 @@ fn main() {
     let tmp_file_txt = tmp_file::read_tmp_file_or_empty_str(&args.tmp_file_path);
     let tmp_file_data = tmp_file::TmpFileData::try_from(tmp_file_txt);
 
+    let prev_workspace_id = match &tmp_file_data {
+        Err(_) => None,
+        Ok(tfd) => Some(tfd.workspace_id)
+    };
     let prev_focus_index = match &tmp_file_data {
         Err(_) => None,
         Ok(tfd) => Some(tfd.current_focus_index)
@@ -85,8 +90,11 @@ fn main() {
         Some(t) => check_timeout(args.timeout_ms, t, call_timestamp_ms),
         None => true
     };
+
+    let current_workspace_id = get_current_workspace_id();
+    let should_reset = timeout || prev_workspace_id.is_none() || ( current_workspace_id != prev_workspace_id.unwrap_or(u32::MAX));
     
-    let window_ids = if timeout {
+    let window_ids = if should_reset {
         get_window_ids()
     }else{
         match prev_window_ids {
@@ -113,6 +121,7 @@ fn main() {
         current_focus_index: next_focus_index,
         timestamp_ms: call_timestamp_ms,
         window_ids,
+        workspace_id: current_workspace_id
     };
 
     let txt : String= new_tmp_file_data.into();

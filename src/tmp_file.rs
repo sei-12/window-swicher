@@ -31,6 +31,7 @@ pub struct TmpFileData {
     pub current_focus_index: usize,
     pub timestamp_ms: i64,
     pub window_ids: Vec<u32>,
+    pub workspace_id: u32,
 }
 
 impl TryFrom<String> for TmpFileData {
